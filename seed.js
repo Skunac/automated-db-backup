@@ -1,5 +1,5 @@
-db = db.getSiblingDB('test_db');
-
+// Use the specified database
+db = db.getSiblingDB(process.env.MONGO_INITDB_DATABASE || 'test');
 
 db.users.insertMany([
     { name: 'John Doe', email: 'john@example.com', created_at: new Date() },
