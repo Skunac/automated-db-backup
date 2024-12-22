@@ -1,0 +1,45 @@
+name: MongoDB Restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_file:
+        description: 'Backup filename to restore (e.g., backup_20241222_010000.gz)'
+        required: true
+        type: string
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install MongoDB Database Tools
+        run: |
+          wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.9.4.deb
+          sudo apt install ./mongodb-database-tools-ubuntu2204-x86_64-100.9.4.deb
+
+      - name: Configure AWS CLI for Cloudflare R2
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          aws configure set region auto
+
+      - name: Download backup from R2
+        run: |
+          aws s3 cp \
+            s3://${{ secrets.R2_BUCKET_NAME }}/${{ inputs.backup_file }} \
+            backup.gz \
+            --endpoint-url ${{ secrets.R2_ENDPOINT_URL }}
+
+      - name: Restore backup
+        env:
+          MONGODB_URI: "mongodb://${{ secrets.MONGODB_USERNAME }}:${{ secrets.MONGODB_PASSWORD }}@${{ secrets.MONGODB_HOST }}:27017/${{ secrets.MONGODB_DATABASE }}?authSource=admin&directConnection=true"
+        run: |
+          mongorestore \
+            --uri="${MONGODB_URI}" \
+            --gzip \
+            --archive=backup.gz \
+            --drop
+
+      - name: Cleanup
+        run: rm backup.gz
