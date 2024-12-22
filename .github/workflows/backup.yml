@@ -21,7 +21,7 @@ jobs:
 
       - name: Create MongoDB backup
         env:
-          MONGODB_URI: mongodb://${{ secrets.MONGODB_USERNAME }}:${{ secrets.MONGODB_PASSWORD }}@${{ secrets.MONGODB_HOST }}:27017/${{ secrets.MONGODB_DATABASE }}
+          MONGODB_URI: "mongodb://${{ secrets.MONGODB_USERNAME }}:${{ secrets.MONGODB_PASSWORD }}@${{ secrets.MONGODB_HOST }}:27017/${{ secrets.MONGODB_DATABASE }}?authSource=admin&directConnection=true"
         run: |
           mongodump \
             --uri="${MONGODB_URI}" \
